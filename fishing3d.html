@@ -1371,12 +1371,13 @@ function renderPanel(){$('tabs').innerHTML=TABS.map(([k,n])=>`<button class="tab
   (()=>{const l=S.bag.map((b,i)=>({b,i})).reverse();if(bagSort)l.sort((x,y)=>FISH[y.b.f].r-FISH[x.b.f].r||y.b.v-x.b.v);return l})().map(({b,i})=>{const f=FISH[b.f];return `<div class="row"><div class="rn" style="color:${RAR[f.r].c}">${f.n}<small>[${RAR[f.r].n}] ${b.w}kg</small></div><button class="b2" data-act="sell" data-i="${i}">${fmt(b.v)}G 팔기</button></div>`}).join('')}
  else if(tab==='dex'){const total=Object.keys(S.dex).length;
   const dc=MAPFISH[dexMap].filter(id=>S.dex[id]).length;
-  h=`<div class="note">도감 ${total}/500<br>${MAPS[dexMap].n} ${dc}/50 · 완성 보상 ${fmt(dexReward(dexMap))}G ${S.dexReward.includes(dexMap)?'<span class="tag">받음</span>':'(50종 완성 시 자동 지급)'}</div><div style="margin-bottom:8px">${MAPS.map((m,i)=>`<span class="opt${dexMap===i?' on':''}" data-act="dexMap" data-i="${i}">${m.n}</span>`).join('')}</div><div class="grid">`+
+  h=`<div class="note">도감 ${total}/${FISH.length}<br>${MAPS[dexMap].n} ${dc}/50 · 완성 보상 ${fmt(dexReward(dexMap))}G ${S.dexReward.includes(dexMap)?'<span class="tag">받음</span>':'(50종 완성 시 자동 지급)'}</div><div style="margin-bottom:8px">${MAPS.map((m,i)=>`<span class="opt${dexMap===i?' on':''}" data-act="dexMap" data-i="${i}">${m.n}</span>`).join('')}</div><div class="grid">`+
   MAPFISH[dexMap].map(id=>{const f=FISH[id],d=S.dex[id];return `<div class="cell" style="border-color:${RAR[f.r].c}">${d?`<b style="color:${RAR[f.r].c}">${f.n}</b><br>${d.c}마리 · 최대 ${d.w}kg`:`<b style="color:${RAR[f.r].c}">???</b><br>${RAR[f.r].n}`}</div>`}).join('')+'</div>'}
  else if(tab==='rec'){const s=S.st;
-  h=`<div class="note">낚은 물고기 ${fmt(s.caught)}마리 · 놓친 물고기 ${fmt(s.miss)}마리<br>던진 횟수 ${fmt(s.casts)} · 현재 연속 ${s.streak} · 최고 연속 ${s.best}<br>신화 ${s.myth}마리 · 뽑기 ${fmt(s.pulls)}회 · 누적 골드 ${fmt(s.earned)}G<br>도감 ${Object.keys(S.dex).length}/500 · 낚싯대 ${S.rods.length}/100</div><h4>히든 낚싯대</h4>`+
+  h=`<div class="note">낚은 물고기 ${fmt(s.caught)}마리 · 놓친 물고기 ${fmt(s.miss)}마리<br>던진 횟수 ${fmt(s.casts)} · 현재 연속 ${s.streak} · 최고 연속 ${s.best}<br>신화 ${s.myth}마리 · 뽑기 ${fmt(s.pulls)}회 · 누적 골드 ${fmt(s.earned)}G<br>도감 ${Object.keys(S.dex).length}/${FISH.length} · 낚싯대 ${S.rods.length}/${RODS.length} · 검 ${S.swords.length}/${SW.length} · 몬스터 처치 ${fmt(S.st.kills||0)}</div><h4>히든 낚싯대</h4>`+
   HIDDEN.map((hd,k)=>`<div class="row"><div class="rn" style="color:${RAR[8].c}">${S.rods.includes(90+k)?hd.n:'???'}<small>${S.rods.includes(90+k)?hd.d:'조건은 비밀이에요 🤫'}</small></div>${S.rods.includes(90+k)?'<span class="tag">해금</span>':'<span class="lock">🔒</span>'}</div>`).join('')+
   '<h4>&nbsp;</h4><button class="b2 red" data-act="reset">처음부터 다시 하기</button>'}
+ if(tab==='rec')h=gfxPanel()+h;
  $('pbody').innerHTML=h}
 function gachaView(){const top=gachaLog[0].rod.r,cnt={};let back=0,nw=0;gachaLog.forEach(g=>{cnt[g.rod.r]=(cnt[g.rod.r]||0)+1;if(g.dup)back+=g.dup;else nw++});
  return `<h4>뽑기 결과</h4><div class="gsum"><div class="gbest" style="color:${RAR[top].c}">최고 등급: ${RAR[top].n}${top>=4?' ✨':''}</div><small>${Object.keys(cnt).sort((a,b)=>b-a).map(r=>`<span style="color:${RAR[r].c}">${RAR[r].n} ${cnt[r]}</span>`).join(' · ')}</small><small>새 낚싯대 ${nw}개${back?` · 중복 환급 +${fmt(back)}G`:''}</small></div>`+
@@ -2332,13 +2333,49 @@ function updateCharX(dt){
  else if(!land&&!boatS.on&&!isSwim()&&P.spd>1&&CH.dustT<=0&&groundY(P.x,P.z)<0){CH.dustT=.25;ripple(P.x,P.z,.4)}
  for(const d of CH.dust){if(d.t<=0)continue;d.t-=dt;const u=1-d.t/.6;d.m.scale.setScalar(.12+u*.35);d.m.position.y+=dt*.4;if(d.t<=0)d.m.visible=false}
  dustMat.opacity=.5}
+// ================= 모바일 최적화: 화면 배치 · 자동 그래픽 · 전체 화면 =================
+_gst.textContent+=
+ // 빨간 공격 버튼은 숨김(검을 들면 파란 버튼이 공격 버튼이 됨)
+ '.touch #atkBtn{display:none!important}'+
+ // 세로 화면: 체력바는 왼쪽 칩 아래로
+ '@media (max-width:600px){#hpEl{left:calc(8px + env(safe-area-inset-left));transform:none;top:calc(116px + env(safe-area-inset-top));width:min(220px,60vw)}#frz{top:calc(142px + env(safe-area-inset-top))}}'+
+ '.touch #shopBtn{bottom:calc(236px + env(safe-area-inset-bottom))!important}'+
+ // 가로 화면(낮은 높이): 스킬은 낚시 버튼 위 가로 한 줄, 슬롯은 아래 가운데
+ '@media (max-height:500px){.touch #skbar{flex-direction:row;right:calc(18px + env(safe-area-inset-right));bottom:calc(132px + env(safe-area-inset-bottom))}.touch #slots{right:auto;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom))}'+
+ '.touch #shopBtn{bottom:calc(70px + env(safe-area-inset-bottom))!important}.skb{width:44px;height:44px;font-size:20px}#joy{width:118px;height:118px}.touch #fishBtn{width:88px;height:88px}}'+
+ '#gfxBtn,#fsBtn{padding:8px 10px}';
+frzEl.id='frz';
+// iOS 확대 제스처 막기
+['gesturestart','gesturechange'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+// 전체 화면 버튼(지원하는 기기에서만)
+{const de=document.documentElement,req=de.requestFullscreen||de.webkitRequestFullscreen;if(isTouch&&req){const b=document.createElement('button');b.className='btn';b.id='fsBtn';b.textContent='⛶';b.title='전체 화면';$('topR').prepend(b);
+ b.addEventListener('click',()=>{try{const fe=document.fullscreenElement||document.webkitFullscreenElement;if(fe)(document.exitFullscreen||document.webkitExitFullscreen).call(document);else{const p=req.call(de);if(p&&p.catch)p.catch(()=>{});try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})}catch(e){}}}catch(e){}})}}
+// ---------- 그래픽 품질: 자동(느리면 낮춤) · 높음 · 낮음 ----------
+if(!['auto','high','low'].includes(S.gfx))S.gfx='auto';
+const GFX={level:2,t:0,n:0,checked:false};
+function setShadows(on){if(renderer.shadowMap.enabled===on)return;renderer.shadowMap.enabled=on;sun.castShadow=on;scene.traverse(o=>{if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true)}})}
+function applyGfx(level){GFX.level=level;const dpr=window.devicePixelRatio||1;
+ if(level>=2){renderer.setPixelRatio(Math.min(dpr,isTouch?1.5:2));setShadows(true)}
+ else if(level===1){renderer.setPixelRatio(Math.min(dpr,1.25));setShadows(true);sun.shadow.mapSize.set(1024,1024);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}}
+ else{renderer.setPixelRatio(1);setShadows(false)}
+ resize()}
+applyGfx(S.gfx==='low'?0:2);
+function updateGfx(dt){if(S.gfx!=='auto'||GFX.checked||panelOpen||document.hidden)return;GFX.t+=dt;GFX.n++;
+ if(GFX.t>=4){const fps=GFX.n/GFX.t;GFX.t=0;GFX.n=0;
+  if(fps<28&&GFX.level>0){applyGfx(0);toast('📱 기기가 느려서 그래픽을 낮췄어요 (메뉴 > 기록에서 바꿀 수 있어요)',3200);GFX.checked=true}
+  else if(fps<45&&GFX.level>1){applyGfx(1)}else if(GFX.level===1&&fps>=45)GFX.checked=true;else if(GFX.level===2)GFX.checked=true}}
+function gfxPanel(){const o=[['auto','자동'],['high','높음'],['low','낮음 (빠름)']];return `<h4>📱 그래픽</h4><div class="note">휴대폰이 느리면 '낮음'을 고르세요. 그림자를 끄고 해상도를 낮춰서 훨씬 부드러워져요.</div><div>${o.map(([k,n])=>`<span class="opt${S.gfx===k?' on':''}" data-act="gfx" data-k="${k}">${n}</span>`).join('')}</div>`}
+ACT.gfx=function(_,b){const k=b.dataset.k;S.gfx=k;GFX.checked=false;GFX.t=GFX.n=0;applyGfx(k==='low'?0:2);save();renderPanel();toast('그래픽: '+(k==='auto'?'자동':k==='high'?'높음':'낮음'))};
+// 화면 돌림·주소창 변화에 맞춰 크기 다시 맞추기
+if(window.visualViewport)visualViewport.addEventListener('resize',()=>setTimeout(resize,60));
 function goMap(){boatS.on=false;if(boatS.mesh)boatS.mesh.visible=false;buildMap(S.map);P.x=0;P.z=44;P.h=0;P.y=standY(P.x,P.z);cam.yaw=Math.PI;initSchool()}
 function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 window.addEventListener('resize',resize);window.addEventListener('orientationchange',()=>setTimeout(resize,200));
 let T=0,last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000)||0;last=now;T+=dt;
  updateStruggle(dt);updateWorld(dt);updateMorning(dt);
- movement(dt);fishing(dt);updateWater();updateCamera(dt);updateSchool(dt);updateHeld();updateCombat(dt);updateCharDetail(dt);updateSwordDetail(dt);updateShop(dt);updateGod(dt);updateHands(dt);updateFrenzy(dt);updateCut(dt);updateSkills(dt);updateSkBar();updateSwordFx(dt);updateCharX(dt);shakeCam(dt);renderer.render(scene,camera)}
+ movement(dt);fishing(dt);updateWater();updateCamera(dt);updateSchool(dt);updateHeld();updateCombat(dt);updateCharDetail(dt);updateSwordDetail(dt);updateShop(dt);updateGod(dt);updateHands(dt);updateFrenzy(dt);updateCut(dt);updateSkills(dt);updateSkBar();updateSwordFx(dt);updateCharX(dt);shakeCam(dt);updateGfx(dt);renderer.render(scene,camera)}
 resize();applySkin();applyRod();goMap();setPhase('idle');hud();checkHidden();slotUI();
 if(!isTouch)setTimeout(()=>{$('help').style.display='none'},15000);
 setInterval(save,15000);
