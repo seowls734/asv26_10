@@ -2587,7 +2587,7 @@ const uwRays=new THREE.Group();scene.add(uwRays);uwRays.visible=false;
 const causU={uT:{value:0},uC:{value:new THREE.Color(0xbff6ff)}};
 const caus=new THREE.Mesh(new THREE.PlaneGeometry(90,90).rotateX(-Math.PI/2),new THREE.ShaderMaterial({uniforms:causU,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
  vertexShader:'varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.0);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
- fragmentShader:'uniform float uT;uniform vec3 uC;varying vec3 vW;void main(){vec2 p=vW.xz*0.55;float a=sin(p.x+uT*0.9+sin(p.y*1.3+uT))*sin(p.y*1.1-uT*0.8+sin(p.x*0.9-uT*0.7));float b=sin(p.x*1.7-uT*1.2+sin(p.y*0.7))*sin(p.y*1.9+uT*1.1);float c=pow(abs(a+b)*0.5,6.0)*1.6;float f=1.0-smoothstep(10.0,40.0,length(vW.xz-cameraPosition.xz));gl_FragColor=vec4(uC*c,c*f);}'}));
+ fragmentShader:'uniform float uT;uniform vec3 uC;varying vec3 vW;void main(){vec2 p=vW.xz*0.55;float a=sin(p.x+uT*0.9+sin(p.y*1.3+uT))*sin(p.y*1.1-uT*0.8+sin(p.x*0.9-uT*0.7));float b=sin(p.x*1.7-uT*1.2+sin(p.y*0.7))*sin(p.y*1.9+uT*1.1);float c=pow(abs(a+b)*0.5,5.0)*2.2;float f=1.0-smoothstep(10.0,40.0,length(vW.xz-cameraPosition.xz));gl_FragColor=vec4(uC*c,c*f);}'}));
 caus.visible=false;scene.add(caus);
 // 물속 물고기 떼(인스턴스 3무리 × 20)
 const UWF={n:60,body:null,tail:null,d:[]};
@@ -2646,10 +2646,10 @@ function caveDone(mi){const k=dayKey();return !!(S.cave&&S.cave.day===k&&Array.i
 const _uwc=new THREE.Color();
 function setUnderwater(on){if(on===UW.cam)return;UW.cam=on;
  if(on){UW.saved={fc:scene.fog.color.clone(),fn:scene.fog.near,ff:scene.fog.far,bg:scene.background&&scene.background.clone?scene.background.clone():null,hc:hemi.color.clone()};
-  const c=_uwc.set(MAPS[curMap].water).lerp(new THREE.Color(0x0a5a7a),.5);scene.fog.color.copy(c);scene.fog.near=1;scene.fog.far=42;scene.background=c.clone();hemi.color.setHex(0x9ae8ff);
+  const c=_uwc.set(MAPS[curMap].water).lerp(new THREE.Color(0x4fd0e8),.6);UW.saved.hi=hemi.intensity;UW.saved.si=sun.intensity;UW.saved.fl=floorMat.color.clone();floorMat.color.set(MAPS[curMap].sand).multiplyScalar(.85);scene.fog.color.copy(c);scene.fog.near=4;scene.fog.far=75;scene.background=c.clone();hemi.color.setHex(0xc8f6ff);hemi.intensity=1.05;sun.intensity=1.25;
   UW.hide=[];skyGroup.visible=false;mapGroup.traverse(o=>{if(o.material&&o.material.fog===false&&o.visible){o.visible=false;UW.hide.push(o)}});
-  seaU.uFog.value.copy(c);seaU.uFN.value=1;seaU.uFF.value=60;uwRays.visible=caus.visible=true}
- else{const s=UW.saved;if(s){scene.fog.color.copy(s.fc);scene.fog.near=s.fn;scene.fog.far=s.ff;scene.background=s.bg;hemi.color.copy(s.hc)}skyGroup.visible=true;UW.hide.forEach(o=>o.visible=true);UW.hide=[];
+  seaU.uFog.value.copy(c);seaU.uFN.value=4;seaU.uFF.value=90;uwRays.visible=caus.visible=true}
+ else{const s=UW.saved;if(s){scene.fog.color.copy(s.fc);scene.fog.near=s.fn;scene.fog.far=s.ff;scene.background=s.bg;hemi.color.copy(s.hc);if(s.hi!==undefined){hemi.intensity=s.hi;sun.intensity=s.si}if(s.fl)floorMat.color.copy(s.fl)}skyGroup.visible=true;UW.hide.forEach(o=>o.visible=true);UW.hide=[];
   seaU.uFog.value.copy(scene.fog.color);seaU.uFN.value=scene.fog.near;seaU.uFF.value=scene.fog.far;uwRays.visible=caus.visible=false}}
 function updateUW(dt){const sw=isSwim();
  // 깊이 조절
@@ -2662,7 +2662,7 @@ function updateUW(dt){const sw=isSwim();
  oxyEl.style.display=under||UW.oxy<1&&sw?'block':'none';$('oxyF').style.width=(UW.oxy*100).toFixed(0)+'%';
  // 카메라가 물속인지
  setUnderwater(camera.position.y<wave(camera.position.x,camera.position.z,T)-.08);
- if(UW.cam){causU.uT.value=T;caus.position.set(Math.round(P.x),-9.05,Math.round(P.z));uwRays.children.forEach((m,k)=>{const o=m.userData.o;m.position.set(Math.round(P.x/6)*6+o[0],-1,Math.round(P.z/6)*6+o[1]);m.material.opacity=.07+.04*Math.sin(T*.7+k)})}
+ if(UW.cam){causU.uT.value=T;caus.position.set(Math.round(P.x),-9.05,Math.round(P.z));uwRays.children.forEach((m,k)=>{const o=m.userData.o;m.position.set(Math.round(P.x/6)*6+o[0],-1,Math.round(P.z/6)*6+o[1]);m.material.opacity=.13+.05*Math.sin(T*.7+k)})}
  // 물속 물고기 떼
  const show=sw||UW.cam;UWF.body.visible=UWF.tail.visible=show;
  if(show){for(let i=0;i<UWF.n;i++){const d=UWF.d[i],ga=T*.25+d.g*2.1,cx=P.x+Math.sin(ga)*(7+d.g*2),cz=P.z+Math.cos(ga)*(7+d.g*2),gy=Math.max(groundY(cx,cz)+1,-8.2),cy=Math.min(-1.2,gy+1.5+d.g*.9);
