@@ -1377,7 +1377,7 @@ function renderPanel(){$('tabs').innerHTML=TABS.map(([k,n])=>`<button class="tab
   MAPS.map((m,i)=>{const own=S.maps.includes(i),cnt=MAPFISH[i].filter(id=>S.dex[id]).length;return `<div class="row"><div class="rn">${i+1}. ${m.n}<small>도감 ${cnt}/${MAPFISH[i].length} · 가격 배율 ×${m.mult}</small></div>${own?(S.map===i?'<span class="tag">현재 위치</span>':`<button class="b2" data-act="travel" data-i="${i}">이동</button>`):(S.maps.includes(i-1)?`<button class="b2 buy" data-act="unlockMap" data-i="${i}">${fmt(m.price)}G</button>`:'<span class="lock">🔒 이전 지도 필요</span>')}</div>`}).join('')}
  else if(tab==='skin'){const k=S.skin;const sw=(arr,key)=>arr.map((c,i)=>`<span class="sw${k[key]===i?' on':''}" style="background:#${c.toString(16).padStart(6,'0')}" data-act="skin" data-k="${key}" data-i="${i}"></span>`).join('');
   const op=(arr,key)=>arr.map((n,i)=>`<span class="opt${k[key]===i?' on':''}" data-act="skin" data-k="${key}" data-i="${i}">${n}</span>`).join('');
-  h=`<h4>피부색</h4>${sw(TONES,'tone')}<h4>상의</h4>${sw(SHIRTS,'shirt')}<h4>하의</h4>${sw(PANTS,'pants')}<h4>모자</h4>${op(HATS,'hat')}<h4>표정</h4>${op(FACES,'face')}<h4>&nbsp;</h4><button class="b2 buy" data-act="skinRandom">🎲 랜덤</button>`}
+  h=`<h4>피부색</h4>${sw(TONES,'tone')}<h4>상의</h4>${sw(SHIRTS,'shirt')}<h4>하의</h4>${sw(PANTS,'pants')}<h4>모자</h4>${op(HATS,'hat')}<h4>표정</h4>${op(FACES,'face')}<h4>&nbsp;</h4><button class="b2 buy" data-act="skinRandom">🎲 랜덤</button> <button class="b2" data-act="rename">✏️ 닉네임 바꾸기</button>`}
  else if(tab==='bag'){const tot=S.bag.reduce((a,b)=>a+b.v,0);
   h=`<div class="note">가방 ${S.bag.length}/${BAGMAX} · 총 ${fmt(tot)}G<br>🐟 선착장 옆 생선 가게에서 팔면 10% 더 받아요.</div><div style="display:flex;gap:6px;margin-bottom:8px"><button class="b2 buy" data-act="sellAll">전부 팔기</button><button class="b2" data-act="sellLow">일반·희귀만 팔기</button><button class="b2" data-act="bagSort">${bagSort?'🕒 최근 순':'⭐ 등급별 정렬'}</button></div>`+
   (()=>{const l=S.bag.map((b,i)=>({b,i})).reverse();if(bagSort)l.sort((x,y)=>FISH[y.b.f].r-FISH[x.b.f].r||y.b.v-x.b.v);return l})().map(({b,i})=>{const f=FISH[b.f];return `<div class="row"><div class="rn" style="color:${RAR[f.r].c}">${f.n}<small>[${RAR[f.r].n}] ${b.w}kg</small></div><button class="b2" data-act="sell" data-i="${i}">${fmt(b.v)}G 팔기</button></div>`}).join('')}
@@ -1657,7 +1657,7 @@ function monsterSpot(R,t){const cx=t.boss?(t.bx===undefined?-22:t.bx):0,cz=t.bos
 function spawnMon(m,R){const t=MTYPE[m.t],p=monsterSpot(R||Math.random,t);m.x=p[0];m.z=p[1];m.hp=m.max=t.hp;m.dead=false;m.g.visible=m.bar.visible=true;m.g.scale.setScalar(t.sz);m.wt=0;m.atkT=1;m.hitT=0;m.lunge=0;m.h=Math.random()*6.28}
 // 숨(드래곤 불·히드라 독)
 const BREATH=[];
-function breathFx(m,t){const fx=Math.sin(m.g.rotation.y),fz=Math.cos(m.g.rotation.y),y=groundY(m.x,m.z)+(t.fly||0)+t.hh*t.sz*.55;let n=0;
+function breathFx(m,t){const fx=Math.sin(m.g.rotation.y),fz=Math.cos(m.g.rotation.y),y=(m.sea?m.y-1:groundY(m.x,m.z)+(t.fly||0))+t.hh*t.sz*.55;let n=0;
  for(const b of BREATH){if(b.t>0)continue;b.t=.55+Math.random()*.2;b.m.material=t.breath===0xff6a1a?FX.fire:FX.poison;b.m.visible=true;
   b.m.position.set(m.x+fx*t.rad*t.sz,y,m.z+fz*t.rad*t.sz);b.vx=(P.x-b.m.position.x)/b.t+(Math.random()-.5)*3;b.vy=(P.y+1.5-y)/b.t+(Math.random()-.5)*2;b.vz=(P.z-b.m.position.z)/b.t+(Math.random()-.5)*3;if(++n>=10)break}}
 const FX={};
@@ -1721,13 +1721,13 @@ function buildMonsterMap(mi){MON.length=0;atkBtn.style.display='none';hpEl.style
   const b1=new THREE.Mesh(G_BOX,tp.boss?MM.bar2:MM.bar1);b1.scale.set(1.24,.11,.012);b1.position.z=.01;bar.add(b1);b0.renderOrder=5;b1.renderOrder=6;mapGroup.add(bar);
   if(tp.boss)bar.scale.setScalar(2.4);const m={t,g,bar,fg:b1};spawnMon(m,R);MON.push(m)})}
 function monsterNear(){const sw=SW[S.sword];for(const m of MON){if(m.dead)continue;const t=MTYPE[m.t];if(Math.hypot(m.x-P.x,m.z-P.z)<2.6+sw.len+t.rad*t.sz)return true}return false}
-function attack(){if(swingT>0||panelOpen||boatS.on||isSwim())return;if(F.phase!=='idle')return;if(S.hand!=='sword')setHand('sword',true);swingT=.42;swingHit=false;vib(15)}
+function attack(){if(swingT>0||panelOpen||boatS.on||(isSwim()&&UW.depth<=.3))return;if(F.phase!=='idle')return;if(S.hand!=='sword')setHand('sword',true);swingT=.42;swingHit=false;vib(15)}
 function doHit(){const sw=SW[S.sword],fx=Math.sin(P.h),fz=Math.cos(P.h);let any=false;
  for(const m of MON){if(m.dead)continue;const t=MTYPE[m.t],dx=m.x-P.x,dz=m.z-P.z,d=Math.hypot(dx,dz),reach=1.4+sw.len+t.rad*t.sz;
   if(d>reach||(d>1.2&&(dx*fx+dz*fz)/d<.15))continue;any=true;
   const crit=Math.random()<.12,dmg=Math.round(sw.atk*(.9+Math.random()*.2)*(crit?2:1));m.hp-=dmg;m.hitT=.2;
   if(!t.boss&&d>.01){m.x+=dx/d*.5;m.z+=dz/d*.5}
-  floatText(m.x,groundY(m.x,m.z)+(t.fly||0)+t.hh*t.sz*.75,m.z,(crit?'치명타! ':'')+fmt(dmg),crit?'#ffe14d':'#fff');
+  floatText(m.x,(m.sea?m.y-1:groundY(m.x,m.z)+(t.fly||0))+t.hh*t.sz*.75,m.z,(crit?'치명타! ':'')+fmt(dmg),crit?'#ffe14d':'#fff');
   if(m.hp<=0)killMon(m)}
  if(any)vib(25)}
 function killMon(m){const t=MTYPE[m.t];m.dead=true;m.respawn=t.boss?90:8+Math.random()*6;m.g.visible=m.bar.visible=false;
@@ -1766,7 +1766,7 @@ function updateCombat(dt){
  if(A.shafts&&A.shafts.parent===mapGroup)A.shafts.material.opacity=.09+Math.sin(T*.7)*.04;
  if(FX.bub.visible){const p=FX.bubGeo.attributes.position.array;FX.bub.position.set(P.x,0,P.z);for(let i=0;i<p.length;i+=3){p[i+1]+=dt*(1+(i%7)*.25);p[i]+=Math.sin(T*2+i)*dt*.2;if(p[i+1]>14){p[i+1]=0;p[i]=(Math.random()-.5)*40;p[i+2]=(Math.random()-.5)*40}}FX.bubGeo.attributes.position.needsUpdate=true}
  const safe=boatS.on||onDock(P.x,P.z)||groundY(P.x,P.z)<.2;
- for(const m of MON){const t=MTYPE[m.t],g=m.g,ud=g.userData;
+ for(const m of MON){if(m.sea)continue;const t=MTYPE[m.t],g=m.g,ud=g.userData;
   if(m.dead){m.respawn-=dt;if(m.respawn<=0)spawnMon(m);continue}
   const dx=P.x-m.x,dz=P.z-m.z,d=Math.hypot(dx,dz),range=t.breath?7:t.rad*t.sz+1.5,aggro=!safe&&d<(t.boss?18:11);let vx=0,vz=0,sp=0;
   if(aggro&&d>(t.breath?5:t.rad*t.sz+.9)){vx=dx/d;vz=dz/d;sp=t.spd}
@@ -1899,7 +1899,7 @@ D2.spMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9
 for(let k=0;k<18;k++){const m=new THREE.Mesh(G_SPH,D2.spMat);m.visible=false;scene.add(m);D2.sp.push({m,t:0,vx:0,vy:0,vz:0})}
 function hitSparks(x,y,z){D2.spMat.color.setHex(SW[S.sword].a);let n=0;for(const s of D2.sp){if(s.t>0)continue;s.t=.35;s.m.visible=true;s.m.position.set(x,y,z);const a=Math.random()*6.283,u=Math.random()*2-1;
  s.vx=Math.cos(a)*5*Math.sqrt(1-u*u);s.vy=u*4+2;s.vz=Math.sin(a)*5*Math.sqrt(1-u*u);if(++n>=8)break}}
-{const _dh=doHit;doHit=function(){const hp=MON.map(m=>m.hp);_dh();MON.forEach((m,k)=>{if(m.hp<hp[k]){const t=MTYPE[m.t];hitSparks(m.x,groundY(m.x,m.z)+(t.fly||0)+t.hh*t.sz*.5,m.z)}})}}
+{const _dh=doHit;doHit=function(){const hp=MON.map(m=>m.hp);_dh();MON.forEach((m,k)=>{if(m.hp<hp[k]){const t=MTYPE[m.t];hitSparks(m.x,(m.sea?m.y-1:groundY(m.x,m.z)+(t.fly||0))+t.hh*t.sz*.5,m.z)}})}}
 function updateSwordDetail(dt){
  if(D2.orbit&&swordHold.visible)D2.orbit.rotation.y+=dt*3;
  const sw=swingT>0;D2.trail.visible=sw;if(sw){const u=1-swingT/.42;D2.trailMat.opacity=Math.max(0,Math.sin(clamp((u-.3)/.6,0,1)*Math.PI))*.55;D2.trail.rotation.z=-u*1.2}
@@ -2189,13 +2189,13 @@ function updateFrenzy(dt){if(!isMonMap(curMap)&&!panelOpen){FRZ.next-=dt;if(FRZ.
 // ---------- 매 프레임: 손 슬롯 표시 · 검 휘두르기(전투 지도 밖) ----------
 function updateHands(dt){const sw=isSwim(),sword=S.hand==='sword';
  if(sword&&swordBuilt!==S.sword)buildSword3D(SW[S.sword]);
- body.rod.visible=!sword&&!sw;swordHold.visible=sword&&!sw&&!boatS.on;
- if(sword&&!sw){if(!isMonMap(curMap)){if(swingT>0){swingT-=dt;const u=1-Math.max(0,swingT)/.42;body.armL.rotation.x=u<.35?-2.9*u/.35:-2.9+3.4*(u-.35)/.65;body.armL.rotation.z=-.25*Math.sin(u*Math.PI)}else{body.armL.rotation.x-=.35;body.armL.rotation.z=0}}
+ const uw=sw&&UW.depth>.3;body.rod.visible=!sword&&!sw;swordHold.visible=sword&&(!sw||uw)&&!boatS.on;
+ if(sword&&(!sw||uw)){if(!isMonMap(curMap)){if(swingT>0){swingT-=dt;const u=1-Math.max(0,swingT)/.42;body.armL.rotation.x=u<.35?-2.9*u/.35:-2.9+3.4*(u-.35)/.65;body.armL.rotation.z=-.25*Math.sin(u*Math.PI)}else{body.armL.rotation.x-=.35;body.armL.rotation.z=0}}
   body.armR.rotation.x=P.spd>.1?Math.sin(walkT)*.7:Math.sin(T*2)*.04}}
 // ================= 검 스킬 · 검 원소 연출 · 캐릭터 디테일 3 =================
 // ---------- 몬스터 피해 공통 ----------
 function hurtMon(m,base){if(m.dead)return;const t=MTYPE[m.t],crit=Math.random()<.15,dmg=Math.round(base*(.9+Math.random()*.2)*(crit?2:1));m.hp-=dmg;m.hitT=.22;
- floatText(m.x,groundY(m.x,m.z)+(t.fly||0)+t.hh*t.sz*.8,m.z,(crit?'치명타! ':'')+fmt(dmg),crit?'#ffe14d':'#9ad8ff');hitSparks(m.x,groundY(m.x,m.z)+(t.fly||0)+t.hh*t.sz*.5,m.z);
+ floatText(m.x,(m.sea?m.y-1:groundY(m.x,m.z)+(t.fly||0))+t.hh*t.sz*.8,m.z,(crit?'치명타! ':'')+fmt(dmg),crit?'#ffe14d':'#9ad8ff');hitSparks(m.x,(m.sea?m.y-1:groundY(m.x,m.z)+(t.fly||0))+t.hh*t.sz*.5,m.z);
  if(m.hp<=0)killMon(m)}
 function monsIn(x,z,r){return MON.filter(m=>!m.dead&&Math.hypot(m.x-x,m.z-z)<r+MTYPE[m.t].rad*MTYPE[m.t].sz)}
 function nearestMon(r){let b=null,bd=r;for(const m of MON){if(m.dead)continue;const d=Math.hypot(m.x-P.x,m.z-P.z);if(d<bd){bd=d;b=m}}return b}
@@ -2229,7 +2229,7 @@ const skySword=new THREE.Group();{const gm=fxMat(0xffe8a0);gm.opacity=.9;const b
  const hd=new THREE.Mesh(G_BOX,fxMat(0xffb04a));hd.material.opacity=.95;hd.scale.set(.5,3,.5);hd.position.y=6;skySword.add(hd)}skySword.visible=false;scene.add(skySword);
 
 function castSkill(i){if(!SKILLS[i])return;if(skLv(i)<1){toast(`🔒 ${SKILLS[i].n}은(는) 메뉴 > 검 탭에서 배울 수 있어요`);return}
- if(panelOpen||boatS.on||isSwim()||SKL.act||F.phase!=='idle')return;if(SKL.cd[i]>0){toast(`${SKILLS[i].ic} ${SKILLS[i].n} 재사용 대기 ${SKL.cd[i].toFixed(1)}초`,900);return}
+ if(panelOpen||boatS.on||(isSwim()&&UW.depth<=.3)||SKL.act||F.phase!=='idle')return;if(SKL.cd[i]>0){toast(`${SKILLS[i].ic} ${SKILLS[i].n} 재사용 대기 ${SKL.cd[i].toFixed(1)}초`,900);return}
  if(S.hand!=='sword')setHand('sword',true);SKL.cd[i]=skCd(i);SKL.act={i,t:0,hit:new Set(),x:P.x,z:P.z,h:P.h};vib(30);
  const sw=SW[S.sword],dmg=sw.atk*skMult(i),y=P.y+.15;
  if(i===0){ringFx(P.x,y,P.z,4.8,SKILLS[0].col,.55);monsIn(P.x,P.z,4.6).forEach(m=>hurtMon(m,dmg))}
@@ -2701,13 +2701,189 @@ floorMat.map=sandTex;floorMat.needsUpdate=true;
 UW.lastUp=-99;
 function updateAutoDive(dt){if(!isSwim())return;if(UW.up)UW.lastUp=T;
  if(P.spd>.5&&!UW.up&&T-UW.lastUp>3&&UW.oxy>.15&&UW.depth<3)UW.depth+=dt*1.6}
+// ================= 물속 사나운 상어(모든 지도) · 닉네임 =================
+const SEASN=['청새리상어','레몬상어','흑기흉상어','그린란드상어','황소상어','뱀상어','화산 상어','수정 상어','구름 상어','별빛 상어','마수 상어','동굴 상어','심해 백상아리','전설의 메갈로돈'];
+const SEAT=MAPS.map((m,mi)=>{const i=MTYPE.length;MTYPE.push({k:'shark',n:'사나운 '+SEASN[mi],hp:Math.round(120*Math.pow(2.1,mi)),atk:Math.round(6*Math.pow(1.55,mi)),gold:Math.round(2500*Math.pow(m.mult,.95)),spd:3.3+mi*.06,sz:mi===13?2.4:1.35,hh:1.4,rad:1.1,sea:1});return i});
+function seaSpot(R){for(let k=0;k<40;k++){const a=R()*6.283,d=72+R()*80,x=Math.sin(a)*d,z=Math.cos(a)*d,g=groundY(x,z);if(g<-6.5)return[x,z,g]}return[0,120,-9]}
+function spawnSea(m,R){const t=MTYPE[m.t],p=seaSpot(R||Math.random);m.hx=m.x=p[0];m.hz=m.z=p[1];m.y=Math.min(-2.5,p[2]+2.5+Math.random()*2);m.hp=m.max=t.hp;m.dead=false;m.g.visible=true;m.atkT=1;m.hitT=0;m.lunge=0;m.ang=Math.random()*6.283}
+{const _bmap=buildMap;buildMap=function(mi){_bmap(mi);monMats();const n=mi===12?5:3,R=rng(mi*71+9);
+ for(let k=0;k<n;k++){const t=SEAT[mi],tp=MTYPE[t],g=buildMonster(tp);mapGroup.add(g);const bar=new THREE.Group(),b0=new THREE.Mesh(G_BOX,MM.bar0);b0.scale.set(1.3,.16,.01);bar.add(b0);
+  const b1=new THREE.Mesh(G_BOX,MM.bar1);b1.scale.set(1.24,.11,.012);b1.position.z=.01;bar.add(b1);b0.renderOrder=5;b1.renderOrder=6;mapGroup.add(bar);
+  const m={t,g,bar,fg:b1,sea:1};spawnSea(m,R);g.scale.setScalar(tp.sz);MON.push(m)}}}
+// 물속에서는 공격·스킬 가능
+{const _p4=press;press=function(){if(isSwim()&&UW.depth>.3&&S.hand==='sword'&&F.phase==='idle'){attack();return}_p4()}}
+function seaHunt(){return isSwim()&&UW.depth>.8}
+function updateSeaSharks(dt){let near=false;const hunt=seaHunt();
+ for(const m of MON){if(!m.sea)continue;const t=MTYPE[m.t],g=m.g;
+  if(m.dead){m.respawn-=dt;if(m.respawn<=0){spawnSea(m);g.scale.setScalar(t.sz)}continue}
+  const dx=P.x-m.x,dz=P.z-m.z,py=P.y+1.2,dy=py-m.y,d=Math.hypot(dx,dz,dy);let tx,ty,tz,sp;
+  if(hunt&&d<20){near=true;tx=P.x;ty=py;tz=P.z;sp=t.spd}else{m.ang+=dt*.25;tx=m.hx+Math.sin(m.ang)*12;tz=m.hz+Math.cos(m.ang)*12;ty=Math.min(-2.5,groundY(tx,tz)+3);sp=t.spd*.45}
+  const vx=tx-m.x,vy=ty-m.y,vz=tz-m.z,vl=Math.hypot(vx,vy,vz)||1;if(vl>(hunt&&d<20?1.6:.3)){m.x+=vx/vl*sp*dt;m.y+=vy/vl*sp*dt;m.z+=vz/vl*sp*dt}
+  m.y=clamp(m.y,groundY(m.x,m.z)+1,-1.6);if(groundY(m.x,m.z)>-2.5){m.x-=vx/vl*sp*dt*2;m.z-=vz/vl*sp*dt*2}
+  turnTo(g,vx,vz,dt);g.rotation.x=-clamp(vy/vl,-.6,.6)*.6;
+  m.atkT-=dt;if(hunt&&d<2.4*t.sz/1.35&&m.atkT<=0){m.atkT=1.4;m.lunge=.3;const dm=Math.round(t.atk*(.85+Math.random()*.3));PHP-=dm;hurtT=.35;regenT=4;vib(50);
+   floatText(P.x,P.y+2.6,P.z,'🦈 -'+fmt(dm),'#ff6b6b');splash(P.x,P.y+1.5,P.z,4,.4);
+   if(PHP<=0){PHP=PHPmax;toast('🦈 상어에게 당했어요… 선착장에서 다시 시작해요',3000);UW.depth=0;P.x=0;P.z=44;P.h=0;P.y=standY(P.x,P.z)}}
+  // 꼬리·물기 동작
+  const ud=g.userData;for(const s of ud.sway)s.rotation.y=Math.sin(T*(hunt&&d<20?11:5)+m.t)*.45;if(m.lunge>0)m.lunge-=dt;
+  const hs=m.hitT>0?1+m.hitT*.8:1;if(m.hitT>0)m.hitT-=dt;g.scale.setScalar(t.sz*hs*(m.lunge>0?1.08:1));
+  g.position.set(m.x+(m.lunge>0?vx/vl*.5:0),m.y,m.z+(m.lunge>0?vz/vl*.5:0));
+  m.bar.position.set(m.x,m.y+1.4*t.sz,m.z);m.bar.quaternion.copy(camera.quaternion);const r=Math.max(0,m.hp/m.max);m.fg.scale.x=1.24*r;m.fg.position.x=-.62*(1-r);m.bar.visible=(m.hp<m.max||d<14)&&UW.cam}
+ // 지도 밖 체력 표시·회복
+ if(!isMonMap(curMap)){PHPmax=100+SW[S.sword].hp;const show=near||PHP<PHPmax-.5;hpEl.style.display=show?'flex':'none';
+  if(regenT>0)regenT-=dt;else PHP=Math.min(PHPmax,PHP+PHPmax*.06*dt);if(hurtT>0){hurtT-=dt;hurtEl.style.opacity=1}else hurtEl.style.opacity=0;
+  if(show){$('hpF').style.width=(PHP/PHPmax*100).toFixed(1)+'%';$('hpT').textContent=`❤ ${fmt(Math.ceil(PHP))} / ${fmt(PHPmax)} · ${near?'🦈 상어 접근!':SW[S.sword].n}`}
+  for(const f of FT){if(f.t<=0)continue;f.t-=dt;if(f.t<=0){f.d.style.display='none';continue}_v1.set(f.x,f.y+(.9-f.t)*1.2,f.z).project(camera);
+   if(_v1.z>1){f.d.style.display='none';continue}f.d.style.display='block';f.d.style.opacity=Math.min(1,f.t*2.5);f.d.style.transform=`translate(${((_v1.x+1)/2*innerWidth).toFixed(0)}px,${((1-_v1.y)/2*innerHeight).toFixed(0)}px) translate(-50%,-50%)`}}
+ if(near&&!UW.warned){UW.warned=1;toast('🦈 상어가 다가와요! 2번으로 검을 들고 싸우거나 물 위로 도망치세요',3000)}if(!near)UW.warned=0}
+
+// ---------- 닉네임 ----------
+_gst.textContent+='#nameOv{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,rgba(20,90,140,.85),rgba(2,10,24,.94));padding:20px}#nameOv.open{display:flex}'+
+ '#nameBox{width:min(380px,100%);background:#0f1d38;border:2px solid #7fe8ff;border-radius:20px;padding:22px 20px;text-align:center;box-shadow:0 0 40px #29b6f688}'+
+ '#nameBox h2{margin:0 0 4px;font-size:28px;font-weight:900;color:#bff6ff}#nameBox p{margin:0 0 14px;font-size:14px;color:#cfe0ff;line-height:1.5}'+
+ '#nameIn{width:100%;font-size:20px;font-weight:800;padding:12px 14px;border-radius:12px;border:2px solid #3f7cff;background:#0a1530;color:#fff;text-align:center;font-family:inherit;-webkit-user-select:text;user-select:text;touch-action:auto;outline:none}'+
+ '#nameIn:focus{border-color:#ffe14d;box-shadow:0 0 0 3px #ffe14d55}#nameOk{margin-top:12px;width:100%;font-size:18px;padding:12px;border-radius:12px;border:0;background:#d38a1f;color:#fff;font-weight:900;cursor:pointer;font-family:inherit}#nameErr{color:#ffb3b3;font-size:13px;min-height:18px;margin-top:6px}';
+const nameOv=document.createElement('div');nameOv.id='nameOv';nameOv.innerHTML='<div id="nameBox"><h2>🦈 SHARKS</h2><p>아침 바다에 온 걸 환영해요!<br>모험에서 쓸 <b>닉네임</b>을 정해 주세요.</p><input id="nameIn" maxlength="10" placeholder="닉네임 (최대 10자)" autocomplete="off"><div id="nameErr"></div><button id="nameOk">시작하기 🎣</button></div>';
+document.body.appendChild(nameOv);
+function openName(){panelOpen=true;nameOv.classList.add('open');const i=$('nameIn');i.value=S.name||'';$('nameErr').textContent='';setTimeout(()=>{try{i.focus()}catch(e){}},50)}
+function submitName(){const v=$('nameIn').value.replace(/[<>&"']/g,'').trim();if(v.length<1){$('nameErr').textContent='한 글자 이상 입력해 주세요';return}
+ const first=!S.name;S.name=v.slice(0,10);save();nameOv.classList.remove('open');panelOpen=false;CH.tagLv=-1;toast(first?`🎉 어서 와요, ${S.name}님! 즐거운 낚시 되세요`:`닉네임을 ${S.name}(으)로 바꿨어요`,2600);if($('panel').classList.contains('open'))renderPanel()}
+$('nameOk').addEventListener('click',submitName);$('nameIn').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')submitName()});$('nameIn').addEventListener('keyup',e=>e.stopPropagation());
+drawTag=function(){const {c,tx}=CH.tag,x=c.getContext('2d');x.clearRect(0,0,256,64);x.fillStyle='rgba(8,18,40,.72)';x.beginPath();x.moveTo(20,4);x.arcTo(252,4,252,60,16);x.arcTo(252,60,4,60,16);x.arcTo(4,60,4,4,16);x.arcTo(4,4,252,4,16);x.fill();
+ x.textAlign='center';x.textBaseline='middle';x.font='900 25px system-ui,"Malgun Gothic",sans-serif';x.fillStyle='#ffffff';x.fillText(S.name||'낚시꾼',128,23);
+ x.font='800 15px system-ui,"Malgun Gothic",sans-serif';x.fillStyle='#ffe14d';x.fillText(`Lv.${S.lv} · ${S.lv>=50?'바다의 전설':S.lv>=20?'낚시 고수':S.lv>=8?'낚시꾼':'새내기'}`,128,47);tx.needsUpdate=true};
+ACT.rename=function(){closePanel();openName()};
+if(!S.name)setTimeout(openName,300);
+// ================= 언어: 한국어 ↔ English (게임 중에도 🌐 버튼으로 전환) =================
+if(S.lang!=='en')S.lang='ko';
+const EN={
+ // 버튼·HUD
+ '시점':'View','메뉴':'Menu','닫기':'Close','낚시':'Fish','달리기':'Run','공격':'Attack','물고기 팔기':'Sell Fish','위로':'Up','잠수':'Dive','산소':'Oxygen',
+ '던지기!':'Cast!','기다리는 중':'Waiting','당겨!':'Pull!','꾹 눌러\n감기':'Hold to\nReel','감기':'Reel','꾹 눌러':'Hold','성공!':'Got it!',
+ 'WASD 이동':'WASD Move','Shift 달리기':'Shift Run','1 낚싯대':'1 Rod','2 검':'2 Sword','3~8 검 스킬':'3-8 Skills','좌클릭·스페이스 낚시/공격':'Click/Space Fish/Attack','E 가게':'E Shop','F 공격':'F Attack',
+ '우클릭 드래그 회전':'Right-drag Rotate','휠 확대':'Wheel Zoom','C 잠수':'C Dive','B 배':'B Boat','V 시점':'V View','N 지도':'N Map','M 메뉴':'M Menu',
+ // 탭
+ '미션':'Quests','낚싯대':'Rods','뽑기':'Gacha','미끼':'Bait','지도':'Maps','스킨':'Skins','가방':'Bag','도감':'Dex','기록':'Records',
+ // 공통 단어
+ '장착 중':'Equipped','장착':'Equip','배우기':'Learn','강화':'Upgrade','최대':'MAX','이동':'Go','현재 위치':'You are here','잠김':'Locked','해금':'Unlocked','보상 받기':'Claim','받음':'Claimed','진행 중':'In progress',
+ '이전 낚싯대 필요':'Needs previous rod','이전 검 필요':'Needs previous sword','이전 지도 필요':'Needs previous map','전부 팔기':'Sell all','일반·희귀만 팔기':'Sell common & rare','이 등급 팔기':'Sell this tier','팔기':'Sell',
+ '공격력':'ATK','체력':'HP','힘':'Power','행운':'Luck','속도':'Speed','크기':'Size','피해':'Damage','재사용':'Cooldown','마리':' fish',
+ '골드가 부족해요':'Not enough gold','신화 비늘이 부족해요':'Not enough mythic scales','신화 비늘':'Mythic scales','비늘':'Scales','보너스':'Bonus','보물상자':'Treasure chest','레벨':'Level',
+ // 등급
+ '일반':'Common','희귀':'Rare','초희귀':'Epic','영웅':'Hero','전설':'Legendary','신화':'Mythic','각성':'Awakened','초월':'Transcendent','히든':'Hidden','우주':'Cosmic','무지개':'Rainbow',
+ // 지도
+ '달빛 호수':'Moonlight Lake','버들 강':'Willow River','산호 해변':'Coral Beach','얼음 피오르':'Ice Fjord','안개 늪':'Misty Swamp','사막 오아시스':'Desert Oasis','화산섬':'Volcano Isle','수정 동굴 호수':'Crystal Cave Lake',
+ '하늘섬':'Sky Island','별의 바다':'Starry Sea','마수의 섬':'Beast Island','어둠의 동굴':'Dark Cave','바다 속 왕국':'Undersea Kingdom','판타지 월드':'Fantasy World',
+ '본섬':'Main Island','작은 섬':'Islet','갈매기 섬':'Gull Isle','고래 섬':'Whale Isle','보물 섬':'Treasure Isle','안개 섬':'Mist Isle','노을 섬':'Sunset Isle','바람 섬':'Wind Isle','배로 가요':'by boat',
+ '오두막':'Cabin','생선 가게':'Fish Shop','선착장':'Dock','등대':'Lighthouse','폭포':'Waterfall','파라솔 해변':'Parasol Beach','이글루 마을':'Igloo Village','반딧불이 숲':'Firefly Woods','피라미드':'Pyramid',
+ '용암 강':'Lava River','종유석 동굴':'Stalactite Cave','떠 있는 섬':'Floating Isle','행성 전망대':'Planet Lookout','마왕의 문':'Demon Gate','거미 여왕의 둥지':'Spider Queen Nest','해저 신전':'Sunken Temple',
+ '판타지 성':'Fantasy Castle','히드라 늪':'Hydra Marsh','가라앉은 배':'Sunken Ship','바닷속 동굴(잠수)':'Sea Cave (dive)','세계 지도':'World Map','이 지도':'This Map','본섬 확대':'Main Island Zoom','전투 지도':'Battle Map',
+ '번째 지도':'th map','물고기':'Fish','보스 출현':'Boss inside','눌러서 이동':'Tap to travel','몬스터':'Monster','보스':'Boss',
+ // 물고기 앞말
+ '달빛':'Moonlight','버들':'Willow','산호':'Coral','얼음':'Ice','안개':'Mist','모래':'Sand','용암':'Lava','수정':'Crystal','구름':'Cloud','별':'Star','마수':'Beast','동굴':'Cave','심해':'Abyss','판타지':'Fantasy',
+ // 물고기 이름
+ '붕어':'Crucian','피라미':'Minnow','송사리':'Ricefish','잉어':'Carp','미꾸라지':'Loach','망둥어':'Goby','전어':'Gizzard Shad','멸치':'Anchovy','정어리':'Sardine','고등어':'Mackerel','꽁치':'Saury','빙어':'Smelt',
+ '각시붕어':'Bitterling','갈겨니':'Dark Chub','납자루':'Acheilognath','버들치':'Lake Minnow','쉬리':'Shiri','모래무지':'Sand Gudgeon','동자개':'Bagrid','메기':'Catfish','송어':'Trout','농어':'Sea Bass','도미':'Sea Bream',
+ '우럭':'Rockfish','광어':'Flounder','가자미':'Sole','쏘가리':'Mandarin Fish','장어':'Eel','숭어':'Mullet','연어':'Salmon','감성돔':'Black Porgy','열목어':'Lenok','참치':'Tuna','황새치':'Swordfish','청새치':'Blue Marlin',
+ '개복치':'Sunfish','쏨뱅이':'Scorpionfish','아귀':'Anglerfish','곰치':'Moray','해마':'Seahorse','철갑상어':'Sturgeon','가오리':'Stingray','만새기':'Mahi-mahi','돛새치':'Sailfish','황금잉어':'Golden Carp',
+ '심해초롱':'Lanternfish','거대오징어':'Giant Squid','용왕어':'Dragon King Fish','바다의 군주':'Lord of the Sea',
+ // 상어
+ '돔발상어':'Spiny Dogfish','두툽상어':'Cloudy Catshark','별상어':'Starspotted Smoothhound','까치상어':'Banded Houndshark','괭이상어':'Bullhead Shark','너스상어':'Nurse Shark','레몬상어':'Lemon Shark',
+ '흑기흉상어':'Blacktip Reef Shark','흰기흉상어':'Whitetip Reef Shark','얼룩말상어':'Zebra Shark','대나무상어':'Bamboo Shark','전자리상어':'Angelshark','톱상어':'Sawshark','워베공':'Wobbegong','쿠키커터상어':'Cookiecutter Shark',
+ '비단상어':'Silky Shark','갈라파고스상어':'Galapagos Shark','청새리상어':'Blue Shark','악상어':'Salmon Shark','칠성상어':'Sevengill Shark','홍살귀상어':'Scalloped Hammerhead','큰귀상어':'Great Hammerhead','귀상어':'Hammerhead',
+ '청상아리':'Shortfin Mako','뱀상어':'Tiger Shark','황소상어':'Bull Shark','장완흉상어':'Oceanic Whitetip','환도상어':'Thresher Shark','모래뱀상어':'Sand Tiger','여섯줄아가미상어':'Sixgill Shark','주름상어':'Frilled Shark',
+ '마귀상어':'Goblin Shark','메가마우스':'Megamouth','그린란드상어':'Greenland Shark','돌묵상어':'Basking Shark','백상아리':'Great White','고래상어':'Whale Shark','메갈로돈':'Megalodon','상어':'Shark','사나운':'Fierce',
+ '심해 백상아리':'Abyss Great White','전설의 메갈로돈':'Legendary Megalodon','화산 상어':'Volcano Shark','수정 상어':'Crystal Shark','구름 상어':'Cloud Shark','별빛 상어':'Starlight Shark','마수 상어':'Beast Shark','동굴 상어':'Cave Shark',
+ // 몬스터
+ '슬라임':'Slime','고블린':'Goblin','해골 전사':'Skeleton Warrior','그림자 늑대':'Shadow Wolf','바위 골렘':'Rock Golem','심연의 마왕':'Abyss Demon Lord','동굴 박쥐':'Cave Bat','독거미':'Venom Spider','동굴 트롤':'Cave Troll',
+ '수정 골렘':'Crystal Golem','거미 여왕':'Spider Queen','심해 해파리':'Abyss Jellyfish','게 전사':'Crab Warrior','아귀 괴물':'Angler Beast','크라켄':'Kraken','오크 전사':'Orc Warrior','은빛 늑대':'Silver Wolf',
+ '황금 골렘':'Golden Golem','고대 드래곤':'Ancient Dragon','머리 다섯 히드라':'Five-headed Hydra','독버섯 괴물':'Toadstool Fiend','떠도는 유령':'Wandering Ghost','나무 정령':'Treant','사막 전갈':'Desert Scorpion',
+ '동굴 망령':'Cave Wraith','수정 전갈':'Crystal Scorpion','발광 버섯':'Glowshroom','심해 망령':'Abyss Wraith','거대 바닷가재':'Giant Lobster','산호 거인':'Coral Giant','버섯 대왕':'Mushroom King','벚꽃 정령':'Blossom Spirit',
+ '유령 기사':'Ghost Knight','황금 전갈':'Golden Scorpion','처치':'defeated',
+ // 스킬
+ '회전 베기':'Whirl Slash','돌진 찌르기':'Dash Thrust','검기 날리기':'Sword Wave','번개 내려치기':'Thunder Strike','화염 폭발':'Flame Burst','천공의 일격':'Sky Blade','검 스킬':'Sword Skills','검 목록':'Sword List',
+ // 낚싯대·검 이름 낱말
+ '대나무':'Bamboo','버드나무':'Willow','소나무':'Pine','참나무':'Oak','갈대':'Reed','삼나무':'Cedar','오동나무':'Paulownia','자작나무':'Birch','단풍나무':'Maple','밤나무':'Chestnut','강철':'Steel','구리':'Copper','청동':'Bronze',
+ '은 낚싯대':'Silver Rod','유리섬유':'Fiberglass','카본':'Carbon','알루미늄':'Aluminum','니켈':'Nickel','코발트':'Cobalt','크롬':'Chrome','티타늄':'Titanium','사파이어':'Sapphire','루비':'Ruby','에메랄드':'Emerald','진주':'Pearl',
+ '호박':'Amber','비취':'Jade','흑요석':'Obsidian','월석':'Moonstone','폭풍':'Storm','번개':'Lightning','파도':'Wave','해일':'Tsunami','서리':'Frost','화염':'Flame','질풍':'Gale','대지':'Earth','심연':'Abyss','태양':'Sun',
+ '용비늘':'Dragonscale','불사조':'Phoenix','리바이어던':'Leviathan','해신':'Sea God','천둥새':'Thunderbird','유니콘':'Unicorn','그리핀':'Griffin','세이렌':'Siren','히드라':'Hydra','바실리스크':'Basilisk','펜리르':'Fenrir',
+ '키메라':'Chimera','만티코어':'Manticore','페가수스':'Pegasus','케르베로스':'Cerberus','미노타우로스':'Minotaur','골렘':'Golem','타이탄':'Titan','와이번':'Wyvern','창세':'Genesis','종말':'Doom','영겁':'Eternity','무한':'Infinity',
+ '천공':'Heaven','심해왕':'Deep King','은하':'Galaxy','성운':'Nebula','혜성':'Comet','일식':'Eclipse','월식':'Lunar Eclipse','오로라':'Aurora','시공':'Spacetime','차원':'Dimension','운명':'Fate','신탁':'Oracle','태초':'Primordial',
+ '황혼':'Twilight','여명':'Dawn','영혼':'Soul','각성한':'Awakened','용왕':'Dragon King','초월자의':"Transcender's",'신의':"God's",'우주의':'Cosmic','절대자의':"Absolute's",'영원의':'Eternal','블랙홀':'Black Hole',
+ '퀘이사':'Quasar','펄서':'Pulsar','초신성':'Supernova','웜홀':'Wormhole','안드로메다':'Andromeda','오리온':'Orion','카시오페아':'Cassiopeia','시리우스':'Sirius','베텔게우스':'Betelgeuse','북극성':'Polaris','토성고리':'Saturn Ring',
+ '목성폭풍':'Jupiter Storm','유성우':'Meteor Shower','중력파':'Gravity Wave','암흑물질':'Dark Matter','성간구름':'Interstellar Cloud','쌍성':'Binary Star','은하핵':'Galactic Core','빅뱅':'Big Bang','불씨':'Ember','횃불':'Torch',
+ '모닥불':'Bonfire','불꽃':'Blaze','화염검':'Flame Blade','마그마':'Magma','업화':'Hellfire','지옥불':'Inferno','청염':'Blue Flame','백염':'White Flame','흑염':'Black Flame','태양염':'Solar Flame','화산신':'Volcano God',
+ '이프리트':'Ifrit','불도마뱀':'Salamander','불새':'Firebird','염제':'Flame Emperor','겁화':'Doomfire','홍련':'Crimson Lotus','영겁의 불':'Eternal Fire','새벽 무지개':'Dawn Rainbow','쌍무지개':'Double Rainbow',
+ '달무지개':'Moonbow','프리즘':'Prism','일곱빛깔':'Seven Colors','빛의 다리':'Bridge of Light','오색 구름':'Five-color Cloud','천상 무지개':'Heavenly Rainbow','영원 무지개':'Eternal Rainbow','궁극 무지개':'Ultimate Rainbow',
+ '불운의':'Unlucky','연속의':'Streak','박물학자의':"Naturalist's",'천 마리':'Thousand-fish','신화 사냥꾼의':"Myth Hunter's",'방랑자의':"Wanderer's",'도박사의':"Gambler's",'부자의':"Rich Man's",'선장의':"Captain's",'끈기의':"Persistent",
+ '나무 검':'Wooden Sword','녹슨 검':'Rusty Sword','청동 단검':'Bronze Dagger','철검':'Iron Sword','강철 장검':'Steel Longsword','기사의 검':"Knight's Sword",'양손 대검':'Greatsword','곡도':'Scimitar','레이피어':'Rapier',
+ '바이킹 검':'Viking Sword','은빛 세이버':'Silver Saber','사냥꾼의 마체테':"Hunter's Machete",'파도 칼날':'Wave Blade','서리 검':'Frost Sword','불꽃 검':'Blaze Sword','바람 가르기':'Wind Cutter','독사의 송곳니':"Viper's Fang",
+ '달빛 검':'Moonlight Sword','태양 검':'Sun Sword','뇌전 검':'Thunder Sword','수정 대검':'Crystal Greatsword','흑요석 도':'Obsidian Blade','비취 검':'Jade Sword','피의 낫검':'Blood Scythe','해골 분쇄자':'Skull Crusher',
+ '용의 이빨':"Dragon's Tooth",'별가루 검':'Stardust Sword','심해 검':'Abyss Sword','폭풍 칼날':'Storm Blade','그림자 단도':'Shadow Dagger','영웅의 검':"Hero's Sword",'정령검':'Spirit Sword','천둥 대검':'Thunder Greatsword',
+ '지옥 불검':'Hellfire Sword','얼음 여왕의 검':"Ice Queen's Sword",'대지 분쇄검':'Earth Breaker','유령 검':'Ghost Sword','왕의 검':"King's Sword",'용살검':'Dragonslayer','불사조 날개검':'Phoenix Wing','성검 빛의 맹세':'Holy Oath',
+ '마검 어둠의 서약':'Dark Pact','크라켄 베기':'Kraken Cleaver','천공의 검':'Sky Sword','은하 절단검':'Galaxy Cutter','시간의 검':'Sword of Time','무지개 검':'Rainbow Sword','혼돈의 검':'Chaos Sword','각성한 용왕검':'Awakened Dragon King Sword',
+ '초월자의 검':"Transcender's Sword",'신살검':'Godslayer','천지개벽':'Worldbreaker','만검지왕':'King of Swords','운명 절단자':'Fate Cutter','영겁의 칼날':'Eternal Edge','무한의 검':'Infinity Sword','절대 영도':'Absolute Zero','태초의 검':'Primordial Sword',
+ '초월의':'Transcendent','성검':'Holy Sword','마검':'Demon Sword','블레이드':'Blade','지옥왕의':"Hell King's",'태양신의':"Sun God's",'일곱빛':'Seven-light','천상의':'Heavenly','궁극의':'Ultimate','화룡검':'Fire Dragon Sword',
+ '낚싯대':'Rod','대검':'Greatsword','칼날':'Blade',
+ // 미끼·배
+ '지렁이':'Worm','새우':'Shrimp','떡밥':'Paste Bait','옥수수':'Corn','구더기':'Maggot','오징어':'Squid','루어':'Lure','반딧불':'Firefly','깃털':'Feather','기본':'Basic','신선한':'Fresh','고급':'Premium','특제':'Special',
+ '명품':'Luxury','황금':'Golden','영웅의':"Hero's",'전설의':'Legendary','신화의':'Mythic','나룻배':'Rowboat','통통배':'Putt-putt Boat','카누':'Canoe','어선':'Trawler','요트':'Yacht','쾌속정':'Speedboat','범선':'Galleon',
+ '잠수정':'Submarine','비행선':'Airship','별빛 방주':'Starlight Ark','나무 상자':'Wooden Box','은빛 상자':'Silver Box','황금 상자':'Golden Box','별빛 상자':'Starlight Box',
+ // 문장(자주 나오는 것)
+ '미끼 없음':'No bait','대나무 낚싯대':'Bamboo Rod','새로운 물고기!':'New fish!','가방이 가득 차서 바로 팔았어요':'Bag full - sold instantly','물고기가 미끼만 먹고 도망갔어요':'The fish stole the bait',
+ '줄이 풀려서 놓쳤어요':'The line slipped - it got away','물에 던져야 해요':'Cast into the water','움직여서 낚시를 멈췄어요':'You moved - fishing stopped','낚시 중에는 탈 수 없어요':"Can't board while fishing",
+ '벌었어요':'earned','에 도착했어요':' - arrived','해금!':'unlocked!','획득!':'obtained!','감사합니다!':'Thank you!','가게 보너스 10% 포함':'incl. 10% shop bonus','어서 오세요!':'Welcome!',
+ '레벨 업':'Level up','달성':'reached','보상':'Reward','현재 연속':'Current streak','최고 연속':'Best streak','낚은 물고기':'Fish caught','놓친 물고기':'Fish lost','던진 횟수':'Casts','누적 골드':'Total gold','몬스터 처치':'Monsters defeated',
+ '수영 중에는 낚시할 수 없어요. 땅이나 배 위로 올라가세요':"Can't fish while swimming. Get on land or a boat",'수영 중! 물고기 대신 바다를 즐겨요':'Swimming! Enjoy the sea',
+ '상어가 다가와요! 2번으로 검을 들고 싸우거나 물 위로 도망치세요':'A shark approaches! Press 2 to draw your sword, or swim up to escape','상어 접근!':'Shark nearby!','상어가 끌어당겨요! 초록 구간에 붙잡으세요!':'The shark is pulling! Keep it in the green zone!',
+ '상어에게 끌려 바다에 빠졌어요! 풍덩!':'The shark dragged you into the sea! Splash!','숨이 차요! 물 위로 올라가요':'Out of breath! Swim up','보물 발견!':'Treasure found!','바닷속 동굴 보물상자':'Sea cave chest',
+ '물고기 떼 출현!':'Fish frenzy!','황금 물고기!':'Golden fish!','가격':'price','연속!':'streak!','다음 물고기 골드':'next fish gold','상어!':'Shark!','상어 도감':'Shark dex','히든 발견!':'Hidden found!',
+ '거 대 상 어':'G I A N T  S H A R K','전 설 의 상 어':'L E G E N D A R Y  S H A R K','신 화':'M Y T H I C','전 설':'L E G E N D A R Y','일일 미션 완료!':'Daily quest done!','메뉴 > 미션에서 보상 받기':'claim in Menu > Quests',
+ '닉네임':'Nickname','닉네임 바꾸기':'Change name','시작하기':'Start','아침 바다에 온 걸 환영해요!':'Welcome to the morning sea!','모험에서 쓸':'Choose a','을 정해 주세요.':' for your adventure.','한 글자 이상 입력해 주세요':'Enter at least one character',
+ '어서 와요,':'Welcome,','님! 즐거운 낚시 되세요':'! Happy fishing','그래픽':'Graphics','자동':'Auto','높음':'High','낮음 (빠름)':'Low (fast)','언어':'Language','새내기':'Rookie','낚시꾼':'Angler','낚시 고수':'Master Angler','바다의 전설':'Sea Legend',
+ '현재 능력치':'Current stats','낚싯대는 번호 순서대로 살 수 있어요.':'Rods unlock in order.','각성·초월·우주·불·무지개는 신화 비늘도 필요해요.':'Awakened, Transcendent, Cosmic, Fire and Rainbow rods also need mythic scales.',
+ '구매 가능한 다음 낚싯대로':'Jump to next buyable rod','[불]':'[Fire]','숨겨진 낚싯대':'Hidden rods','발견':'found','어딘가에 비밀 조건이 숨어 있어요…':'Secret conditions are hidden somewhere...','조건은 비밀이에요':'Condition is secret',
+ '스킬은 장착한 검의 공격력에 비례해요.':'Skills scale with your sword ATK.','숫자키 3~8(모바일은 오른쪽 스킬 버튼)로 써요.':'Use keys 3-8 (mobile: skill buttons on the right).','레벨을 올리면 피해가 늘고 재사용 시간이 줄어요(최대 5레벨).':'Upgrades add damage and cut cooldown (max Lv.5).',
+ '검은 전투 지도':'Swords are used on battle maps','에서 몬스터와 싸울 때 써요.':' to fight monsters.','보스는 신화 비늘도 줘요.':'Bosses also drop mythic scales.','PC: F키 또는 몬스터 가까이에서 좌클릭':'PC: F key or click near monsters','모바일: 공격 버튼':'Mobile: attack button',
+ '선착장과 배 위는 안전해요.':'The dock and boats are safe.','현재:':'Now:','가방이 비었어요. 물고기를 잡아서 다시 와 주세요!':'Your bag is empty. Come back with fish!','한 마리씩 팔기':'Sell one by one','가게 가격 합계':'Shop total',
+ '잡은 물고기를 사 드려요. 여기서 팔면':'I buy your fish. Sell here for','더 쳐 드려요.':'extra.','선착장 옆 생선 가게에서 팔면 10% 더 받아요.':'Sell at the fish shop by the dock for +10%.','등급별 정렬':'Sort by tier','최근 순':'Newest first',
+ '매일 새로운 미션 4개! 모두 끝내면':'4 new quests daily! Finish all for a','보너스 보물상자':'bonus chest','다음 레벨까지':'to next level','오늘의 보물상자':'Daily chest','미션 4개를 모두 받으면 열 수 있어요':'Claim all 4 quests to open','상자 열기':'Open chest',
+ '오늘 열었어요':'Opened today','미션을 모두 끝내세요':'Finish all quests','물고기 {g}마리 낚기':'Catch {g} fish','희귀 이상 물고기 {g}마리 낚기':'Catch {g} rare+ fish','생선 가게에서 {g}번 팔기':'Sell at the shop {g} times','영웅 이상 물고기 {g}마리 낚기':'Catch {g} hero+ fish','몬스터 {g}마리 처치':'Defeat {g} monsters',
+ '지도는 순서대로 해금해요. 뒤쪽 지도일수록 물고기가 비싸고 어려워요.':'Maps unlock in order. Later maps have pricier, tougher fish.','가격 배율':'Price x','휴대폰이 느리면':'If your phone is slow, pick','를 고르세요. 그림자를 끄고 해상도를 낮춰서 훨씬 부드러워져요.':'. It turns off shadows and lowers resolution.',
+ '낮음':'Low','피부색':'Skin tone','상의':'Shirt','하의':'Pants','모자':'Hat','표정':'Face','랜덤':'Random','없음':'None','야구모자':'Cap','밀짚모자':'Straw hat','비니':'Beanie','왕관':'Crown','해적모자':'Pirate hat','마법사 모자':'Wizard hat',
+ '웃음':'Smile','무표정':'Blank','놀람':'Surprised','윙크':'Wink','보유':'Owned','구매':'Buy','타기':'Ride','뽑기 결과':'Gacha results','최고 등급':'Best tier','천장':'Pity',
+ '완성 보상':'Completion reward','해금 · 다음 지도는 바로 앞 지도를 가진 뒤 살 수 있어요':'unlocked - each map needs the one before it','빨간 테두리':'Red border','는 몬스터가 나오는 전투 지도예요':' = battle map with monsters',
+ '작은 섬은 배로만 갈 수 있어요':'Islets are reachable only by boat','배 타는 곳':'boarding','팔면':'sell for'};
+const _enKeys=Object.keys(EN).sort((a,b)=>b.length-a.length);
+const _enRe=new RegExp(_enKeys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g');
+const HANGUL=/[가-힣]/;
+const EXACT={"나":"Me","검":"Swords","배":"Boat","은":"Silver"};
+function tr(s){if(S.lang==="ko"||!s||!HANGUL.test(s))return s;if(S.name&&s===S.name)return s;const q=s.trim();if(EXACT[q])return s.replace(q,EXACT[q]);return s.replace(_enRe,m=>EN[m]).replace(/(\d)\s*초/g,"$1s").replace(/(\d)\s*번/g,"$1x").replace(/(\d)\s*종/g,"$1 species").replace(/(\d)\s*개/g,"$1").replace(/(\S)(Fish|Rod|Sword|Shark)\b/g,'$1 $2')}
+// 화면 글자 자동 번역(원문은 노드에 보관 → 한국어로 돌아갈 때 복원)
+function trNode(n){if(n.nodeType!==3)return;const v=n.nodeValue;if(S.lang==='ko'){if(n.__ko!==undefined&&v===n.__en)n.nodeValue=n.__ko;return}
+ if(!HANGUL.test(v))return;const o=tr(v);if(o!==v){n.__ko=v;n.__en=o;n.nodeValue=o}}
+function trTree(root){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode())trNode(n)}
+const _mo=new MutationObserver(ms=>{if(S.lang==='ko')return;for(const m of ms){if(m.type==='characterData')trNode(m.target);else m.addedNodes.forEach(n=>n.nodeType===3?trNode(n):n.nodeType===1&&trTree(n))}});
+_mo.observe(document.body,{subtree:true,childList:true,characterData:true});
+// 캔버스 글자(미니맵·이름표 등)
+{const P2=CanvasRenderingContext2D.prototype,_ft=P2.fillText,_st=P2.strokeText;P2.fillText=function(t,...a){return _ft.call(this,tr(String(t)),...a)};P2.strokeText=function(t,...a){return _st.call(this,tr(String(t)),...a)}}
+function setLang(l){S.lang=l;save();document.documentElement.lang=l;trTree(document.body);$('nameIn').placeholder=l==='en'?'Nickname (max 10)':'닉네임 (최대 10자)';
+ CH.tagLv=-1;if($('panel').classList.contains('open'))renderPanel();hud();slotUI();setPhase(F.phase);if(MAPV.open)renderMapOv();langBtn.textContent=l==='en'?'🌐 EN':'🌐 한국어';
+ {const c=document.createElement('canvas');c.width=256;c.height=72;const x=c.getContext('2d');x.fillStyle='#6d4426';x.fillRect(0,0,256,72);x.strokeStyle='#3e2414';x.lineWidth=6;x.strokeRect(3,3,250,66);
+  x.fillStyle='#fff6d8';x.font='900 32px system-ui,"Malgun Gothic",sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('🐟 생선 가게',128,38);shopSignMat.map.dispose();shopSignMat.map=new THREE.CanvasTexture(c);shopSignMat.needsUpdate=true}
+ toast(l==='en'?'🌐 Language: English':'🌐 언어: 한국어')}
+const langBtn=document.createElement('button');langBtn.className='btn';langBtn.id='langBtn';langBtn.textContent='🌐 한국어';$('topR').prepend(langBtn);
+langBtn.addEventListener('click',()=>setLang(S.lang==='en'?'ko':'en'));
+{const _gp=gfxPanel;gfxPanel=function(){return `<h4>🌐 언어 / Language</h4><div><span class="opt${S.lang==='ko'?' on':''}" data-act="lang" data-k="ko">한국어</span><span class="opt${S.lang==='en'?' on':''}" data-act="lang" data-k="en">English</span></div>`+_gp()}}
+ACT.lang=function(_,b){setLang(b.dataset.k)};
+if(S.lang==='en')setTimeout(()=>setLang('en'),0);
 function goMap(){boatS.on=false;if(boatS.mesh)boatS.mesh.visible=false;buildMap(S.map);P.x=0;P.z=44;P.h=0;P.y=standY(P.x,P.z);cam.yaw=Math.PI;initSchool()}
 function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 window.addEventListener('resize',resize);window.addEventListener('orientationchange',()=>setTimeout(resize,200));
 let T=0,last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000)||0;last=now;T+=dt;
  updateStruggle(dt);updateWorld(dt);updateMorning(dt);
- movement(dt);fishing(dt);updateWater();updateCamera(dt);updateSchool(dt);updateHeld();updateCombat(dt);updateCharDetail(dt);updateSwordDetail(dt);updateShop(dt);updateGod(dt);updateHands(dt);updateFrenzy(dt);updateCut(dt);updateSkills(dt);updateSkBar();updateSwordFx(dt);updateCharX(dt);shakeCam(dt);updateGfx(dt);updateChar4(dt);updateMap();updatePull(dt);updateMonCull();updateAutoDive(dt);updateUW(dt);renderer.render(scene,camera)}
+ movement(dt);fishing(dt);updateWater();updateCamera(dt);updateSchool(dt);updateHeld();updateCombat(dt);updateCharDetail(dt);updateSwordDetail(dt);updateShop(dt);updateGod(dt);updateHands(dt);updateFrenzy(dt);updateCut(dt);updateSkills(dt);updateSkBar();updateSwordFx(dt);updateCharX(dt);shakeCam(dt);updateGfx(dt);updateChar4(dt);updateMap();updatePull(dt);updateMonCull();updateAutoDive(dt);updateUW(dt);updateSeaSharks(dt);renderer.render(scene,camera)}
 resize();applySkin();applyRod();goMap();setPhase('idle');hud();checkHidden();slotUI();
 if(!isTouch)setTimeout(()=>{$('help').style.display='none'},15000);
 setInterval(save,15000);

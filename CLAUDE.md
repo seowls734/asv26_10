@@ -3,7 +3,7 @@
 PC와 모바일 브라우저에서 모두 플레이하는 3D 낚시 게임이다. 이 파일은 프로젝트 규칙과 팀 에이전트 역할을 한곳에 정리한 것이다. 모든 작업자는 시작 전에 이 파일을 읽는다.
 
 ## 1. 기본 원칙
-- 사용자와 대화할 때, 그리고 게임 UI의 모든 텍스트는 **한국어**로 쓴다.
+- 사용자와 대화할 때, 그리고 게임 UI의 모든 텍스트는 **한국어**로 쓴다. 영어는 `EN` 사전(한국어 원문 → 영어)과 화면 자동 번역 `tr()`·`setLang()`으로 붙인다(🌐 버튼). 새 문구를 넣으면 `EN`에도 추가한다.
 - 게임은 `fishing3d.html` **한 파일**이다(HTML + CSS + 인라인 JS).
 - 외부 라이브러리는 cdnjs의 Three.js r128 UMD(`THREE` 전역)만 쓴다. 다른 CDN이나 네트워크 요청은 쓰지 않는다.
 - 저장은 `localStorage`를 쓰고, 읽기와 쓰기 모두 try/catch로 감싼다. 새 저장 필드에는 기본값을 둬서 예전 저장 데이터와 호환되게 한다.
@@ -56,6 +56,7 @@ PC와 모바일 브라우저에서 모두 플레이하는 3D 낚시 게임이다
 | 이동 | `movement()`, `onLand()`, `onDock()`, `groundY()`, `colliders` |
 | 낚시 | 상태 `F.phase`: idle → charge → fly → wait → bite → reel → result. 함수: `press()`, `release()`, `land()`, `pickFish()`, `startReel()`, `caught()`, `escapeFish()`, `cancelFishing()`, `fishing()` |
 | 검 스킬·캐릭터 | 검 스킬 6종 `SKILLS`·`castSkill()`(숫자키 3~8, 저장 `S.skills`, 검 탭에서 구매·강화), 검 원소 연출 `swordElement()`·`updateSwordFx()`, 캐릭터 반응 `CH`(기쁨 점프·시무룩·만세·기지개·이름표·먼지) |
+| 상어·닉네임·언어 | 물속 사나운 상어 `SEAT`·`updateSeaSharks()`(물속에서 쫓아와 물고 검·스킬로 싸움, 지도마다 3마리), 닉네임 `S.name`(처음 시작 창, 스킨 탭에서 변경), 언어 `S.lang`(ko/en) |
 | 지도·물속 | 미니맵·큰 지도·세계 지도 `drawArea()`·`openMap()`(N키), 도착 연출, 잠수 `UW`(헤엄치면 자동 잠수 `updateAutoDive()`, C 더 깊이·스페이스 위로, 산소 30초), 바닥 모래 `sandTex`·돌·조개, 산호초 `buildReef()`, 물속 동굴 보물 `buildSeaCave()`(하루 1번, `S.cave`), 바다 깊이 -9, 몬스터 35종 |
 | 모바일 | 세로·가로 배치(`_gst` CSS), 빨간 공격 버튼 숨김(파란 버튼이 공격), 전체 화면 버튼, 자동 그래픽 `S.gfx`·`applyGfx()`(느리면 그림자 끔·해상도 낮춤, 기록 탭에서 선택) |
 | 갓겜 패치 | 바다 셰이더 `seaMat`·`seaSetup()`, 수영 `isSwim()`·`swimY()`, 휘는 낚싯대 `ROD.seg`, 손 슬롯 `S.hand`(1 낚싯대·2 검), 컷씬 `startCut()`(전설·신화), 레벨 `S.lv`·`S.xp`, 일일 미션 `S.daily`, 황금 물고기·콤보·물고기 떼 이벤트, 생선 가게 `buildShop()`(+10%), 히든 낚싯대는 해금 전 숨김 |
