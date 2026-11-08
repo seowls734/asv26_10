@@ -2745,15 +2745,15 @@ _gst.textContent+='#nameOv{position:fixed;inset:0;z-index:40;display:none;align-
  '#nameIn:focus{border-color:#ffe14d;box-shadow:0 0 0 3px #ffe14d55}#nameOk{margin-top:12px;width:100%;font-size:18px;padding:12px;border-radius:12px;border:0;background:#d38a1f;color:#fff;font-weight:900;cursor:pointer;font-family:inherit}#nameErr{color:#ffb3b3;font-size:13px;min-height:18px;margin-top:6px}';
 const nameOv=document.createElement('div');nameOv.id='nameOv';nameOv.innerHTML='<div id="nameBox"><h2>🦈 SHARKS</h2><p>아침 바다에 온 걸 환영해요!<br>모험에서 쓸 <b>닉네임</b>을 정해 주세요.</p><input id="nameIn" maxlength="10" placeholder="닉네임 (최대 10자)" autocomplete="off"><div id="nameErr"></div><button id="nameOk">시작하기 🎣</button></div>';
 document.body.appendChild(nameOv);
-function openName(){panelOpen=true;nameOv.classList.add('open');const i=$('nameIn');i.value=S.name||'';$('nameErr').textContent='';setTimeout(()=>{try{i.focus()}catch(e){}},50)}
+function openName(){panelOpen=true;nameOv.classList.add('open');nameOv.querySelector('p').innerHTML=S.name?'다시 와서 반가워요!<br>닉네임을 바꾸거나 그대로 <b>시작하기</b>를 누르세요.':'아침 바다에 온 걸 환영해요!<br>모험에서 쓸 <b>닉네임</b>을 정해 주세요.';const i=$('nameIn');i.value=S.name||'';$('nameErr').textContent='';setTimeout(()=>{try{i.focus()}catch(e){}},50)}
 function submitName(){const v=$('nameIn').value.replace(/[<>&"']/g,'').trim();if(v.length<1){$('nameErr').textContent='한 글자 이상 입력해 주세요';return}
- const first=!S.name;S.name=v.slice(0,10);save();nameOv.classList.remove('open');panelOpen=false;CH.tagLv=-1;toast(first?`🎉 어서 와요, ${S.name}님! 즐거운 낚시 되세요`:`닉네임을 ${S.name}(으)로 바꿨어요`,2600);if($('panel').classList.contains('open'))renderPanel()}
+ const first=!S.name,same=S.name===v.slice(0,10);S.name=v.slice(0,10);save();nameOv.classList.remove('open');panelOpen=false;CH.tagLv=-1;toast(first||same?`🎉 어서 와요, ${S.name}님! 즐거운 낚시 되세요`:`닉네임을 ${S.name}(으)로 바꿨어요`,2600);if($('panel').classList.contains('open'))renderPanel()}
 $('nameOk').addEventListener('click',submitName);$('nameIn').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')submitName()});$('nameIn').addEventListener('keyup',e=>e.stopPropagation());
 drawTag=function(){const {c,tx}=CH.tag,x=c.getContext('2d');x.clearRect(0,0,256,64);x.fillStyle='rgba(8,18,40,.72)';x.beginPath();x.moveTo(20,4);x.arcTo(252,4,252,60,16);x.arcTo(252,60,4,60,16);x.arcTo(4,60,4,4,16);x.arcTo(4,4,252,4,16);x.fill();
  x.textAlign='center';x.textBaseline='middle';x.font='900 25px system-ui,"Malgun Gothic",sans-serif';x.fillStyle='#ffffff';x.fillText(S.name||'낚시꾼',128,23);
  x.font='800 15px system-ui,"Malgun Gothic",sans-serif';x.fillStyle='#ffe14d';x.fillText(`Lv.${S.lv} · ${S.lv>=50?'바다의 전설':S.lv>=20?'낚시 고수':S.lv>=8?'낚시꾼':'새내기'}`,128,47);tx.needsUpdate=true};
 ACT.rename=function(){closePanel();openName()};
-if(!S.name)setTimeout(openName,300);
+setTimeout(openName,300);
 // ================= 언어: 한국어 ↔ English (게임 중에도 🌐 버튼으로 전환) =================
 if(S.lang!=='en')S.lang='ko';
 const EN={
@@ -2853,7 +2853,7 @@ const EN={
  '낮음':'Low','피부색':'Skin tone','상의':'Shirt','하의':'Pants','모자':'Hat','표정':'Face','랜덤':'Random','없음':'None','야구모자':'Cap','밀짚모자':'Straw hat','비니':'Beanie','왕관':'Crown','해적모자':'Pirate hat','마법사 모자':'Wizard hat',
  '웃음':'Smile','무표정':'Blank','놀람':'Surprised','윙크':'Wink','보유':'Owned','구매':'Buy','타기':'Ride','뽑기 결과':'Gacha results','최고 등급':'Best tier','천장':'Pity',
  '완성 보상':'Completion reward','해금 · 다음 지도는 바로 앞 지도를 가진 뒤 살 수 있어요':'unlocked - each map needs the one before it','빨간 테두리':'Red border','는 몬스터가 나오는 전투 지도예요':' = battle map with monsters',
- '작은 섬은 배로만 갈 수 있어요':'Islets are reachable only by boat','배 타는 곳':'boarding','팔면':'sell for'};
+ '작은 섬은 배로만 갈 수 있어요':'Islets are reachable only by boat','배 타는 곳':'boarding','팔면':'sell for','다시 와서 반가워요!':'Welcome back!','닉네임을 바꾸거나 그대로':'Change your nickname or just press','를 누르세요.':'.','을(를)':'','(으)로 바꿨어요':' - nickname changed','닉네임을':''};
 const _enKeys=Object.keys(EN).sort((a,b)=>b.length-a.length);
 const _enRe=new RegExp(_enKeys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g');
 const HANGUL=/[가-힣]/;
