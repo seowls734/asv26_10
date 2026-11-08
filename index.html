@@ -307,7 +307,7 @@ function buildIsland(is,seg,m){const size=is.r*2.7;const g=new THREE.PlaneGeomet
  const pos=g.attributes.position,col=new Float32Array(pos.count*3);
  const cg=new THREE.Color(m.grass),cs=new THREE.Color(m.sand),cu=new THREE.Color(m.sand).multiplyScalar(.5),c=new THREE.Color();
  for(let i=0;i<pos.count;i++){const x=pos.getX(i)+is.x,z=pos.getZ(i)+is.z,h=islandH(is,x,z);pos.setY(i,h);
-  if(h>-0.15){c.copy(cs).lerp(cg,clamp((h-.45)/.5,0,1));const nz=Math.sin(x*.07+is.s)*Math.cos(z*.09-is.s)+Math.sin((x-z)*.031+is.s)*.6;if(h>.9){c.lerp(cs,clamp(nz*.22,0,.3));c.multiplyScalar(1+clamp(nz,-1,0)*.08)}if(h<.4)c.multiplyScalar(.8+clamp((h+.15)/.55,0,1)*.2)}else c.copy(cu);
+  if(h>-0.15){c.copy(cs).lerp(cg,clamp((h-.45)/.5,0,1));const nz=Math.sin(x*.07+is.s)*Math.cos(z*.09-is.s)+Math.sin((x-z)*.031+is.s)*.6;if(h>.9){c.lerp(cs,clamp(nz*.22,0,.3));c.multiplyScalar(1+clamp(nz,-1,0)*.08)}if(h<.4)c.multiplyScalar(.8+clamp((h+.15)/.55,0,1)*.2)}else{c.copy(cs).multiplyScalar(.9+Math.max(-.3,h*.035));c.multiplyScalar(.92+.12*(.5+.5*Math.sin(x*.35+Math.sin(z*.21)*2)))}
   const v=.92+hash(i+is.s*10)*.14;col[i*3]=c.r*v;col[i*3+1]=c.g*v;col[i*3+2]=c.b*v}
  g.setAttribute('color',new THREE.BufferAttribute(col,3));g.computeVertexNormals();
  const mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true}));mesh.userData.terrain=true;mesh.position.set(is.x,0,is.z);mapGroup.add(mesh)}
@@ -2677,13 +2677,37 @@ function updateUW(dt){const sw=isSwim();
    hitSparks(_v1.x,_v1.y+.8,_v1.z);hitSparks(_v1.x,_v1.y+1,_v1.z);lvUp.innerHTML=`<b style="color:#7fe8ff;text-shadow:0 0 18px #29b6f6,0 3px 0 #0a4a6a">🐚 보물 발견!</b><span>바닷속 동굴 보물상자 · +${fmt(g)}G · 비늘 +2</span>`;
    lvUp.classList.remove('on');void lvUp.offsetWidth;lvUp.classList.add('on');vib([60,40,120]);save();hud()}}}
 {const _gm2=goMap;goMap=function(){if(UW.cam){UW.cam=false;skyGroup.visible=true;uwRays.visible=caus.visible=false;UW.hide=[]}UW.depth=0;UW.oxy=1;_gm2()}}
+// ================= 바닷속 모래·돌·조개 + 자동 잠수 =================
+// 모래 무늬 텍스처(한 장 = 5유닛, 물 격자 단위와 같아서 바닥이 따라와도 무늬가 튀지 않음)
+const sandTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#ffffff';x.fillRect(0,0,128,128);
+ for(let k=0;k<5;k++){x.strokeStyle='rgba(120,100,70,.18)';x.lineWidth=5;x.beginPath();for(let i=0;i<=128;i+=4){const y=k*25.6+12+Math.sin(i/128*6.283*2+k)*5;i?x.lineTo(i,y):x.moveTo(i,y)}x.stroke()}
+ for(let k=0;k<5;k++){x.strokeStyle='rgba(255,255,255,.25)';x.lineWidth=2;x.beginPath();for(let i=0;i<=128;i+=4){const y=k*25.6+8+Math.sin(i/128*6.283*2+k)*5;i?x.lineTo(i,y):x.moveTo(i,y)}x.stroke()}
+ for(let i=0;i<1400;i++){const v=hash(i*1.7)*60;x.fillStyle=`rgba(${110+v|0},${95+v|0},${70+v|0},${(.1+hash(i)*.25).toFixed(2)})`;x.fillRect(hash(i*3.1)*128,hash(i*5.3)*128,1+hash(i*7)*1.5,1+hash(i*7)*1.5)}
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(200,200);return t})();
+floorMat.map=sandTex;floorMat.needsUpdate=true;
+{const _bm2=buildMap;buildMap=function(mi){_bm2(mi);floorMat.color.set(MAPS[mi].sand).multiplyScalar(.62)}}
+// 바닥에 돌·자갈·조개껍데기
+{const _br=buildReef;buildReef=function(mi){_br(mi);const R=rng(mi*557+3),rk=[],rk2=[],peb=[],scal=[],conch=[],clam=[];
+ islands.forEach((is,k)=>{const main=k===0,nr=main?160:35,np=main?320:70,ns=main?300:60;
+  const pt=(d0,d1)=>{for(let t=0;t<6;t++){const a=R()*6.283,d=is.r*(d0+R()*(d1-d0)),x=is.x+Math.sin(a)*d,z=is.z+Math.cos(a)*d,y=groundY(x,z);if(y<-1.2&&!(Math.abs(x)<4&&z>48&&z<78))return[x,y,z]}return null};
+  for(let j=0;j<nr;j++){const p=pt(1.05,2.3);if(!p)continue;const n=1+Math.floor(R()*3);for(let q=0;q<n;q++){const s=.4+R()*1.1;(q%2?rk2:rk).push([p[0]+(R()-.5)*1.6,p[1]+s*.25,p[2]+(R()-.5)*1.6,s*(.8+R()*.5),s*(.5+R()*.4),s*(.8+R()*.5),R()*6,(R()-.5)*.5])}}
+  for(let j=0;j<np;j++){const p=pt(1.02,2.4);if(!p)continue;const s=.08+R()*.18;peb.push([p[0],p[1]+s*.3,p[2],s,s*.6,s*.9,R()*6,0,[0x9a9488,0x7a7468,0xb8ae9a,0x8a8a92][j%4]])}
+  for(let j=0;j<ns;j++){const p=pt(1.02,2.2);if(!p)continue;const c=[0xfff0e8,0xffc8b0,0xffd8e8,0xf0e0b8,0xffb070,0xe8d8ff][Math.floor(R()*6)],t=R();
+   if(t<.45)scal.push([p[0],p[1]+.03,p[2],.17,.05,.15,R()*6,0,c]);else if(t<.75)conch.push([p[0],p[1]+.07,p[2],.07,.24,.07,R()*6,Math.PI/2-.2,c]);else clam.push([p[0],p[1]+.04,p[2],.11,.06,.09,R()*6,0,c])}});
+ const sm=new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x151515});
+ const mk=(geo,mat,list,col)=>{const im=instances(geo,mat,list);if(!im)return;im.frustumCulled=false;if(col)colorInst(im,list);UW.coral.push(im)};
+ mk(G_SPH,lam(0x6e7880),rk);mk(G_SPH,lam(0x58626a),rk2);mk(G_SPH,sm,peb,1);mk(G_SPH,sm,scal,1);mk(G_CONE,sm,conch,1);mk(G_SPH,sm,clam,1)}}
+// 자동 잠수: 헤엄치며 움직이면 저절로 물속으로(위로 버튼·스페이스 뒤 3초는 수면 유지)
+UW.lastUp=-99;
+function updateAutoDive(dt){if(!isSwim())return;if(UW.up)UW.lastUp=T;
+ if(P.spd>.5&&!UW.up&&T-UW.lastUp>3&&UW.oxy>.15&&UW.depth<3)UW.depth+=dt*1.6}
 function goMap(){boatS.on=false;if(boatS.mesh)boatS.mesh.visible=false;buildMap(S.map);P.x=0;P.z=44;P.h=0;P.y=standY(P.x,P.z);cam.yaw=Math.PI;initSchool()}
 function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 window.addEventListener('resize',resize);window.addEventListener('orientationchange',()=>setTimeout(resize,200));
 let T=0,last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000)||0;last=now;T+=dt;
  updateStruggle(dt);updateWorld(dt);updateMorning(dt);
- movement(dt);fishing(dt);updateWater();updateCamera(dt);updateSchool(dt);updateHeld();updateCombat(dt);updateCharDetail(dt);updateSwordDetail(dt);updateShop(dt);updateGod(dt);updateHands(dt);updateFrenzy(dt);updateCut(dt);updateSkills(dt);updateSkBar();updateSwordFx(dt);updateCharX(dt);shakeCam(dt);updateGfx(dt);updateChar4(dt);updateMap();updatePull(dt);updateMonCull();updateUW(dt);renderer.render(scene,camera)}
+ movement(dt);fishing(dt);updateWater();updateCamera(dt);updateSchool(dt);updateHeld();updateCombat(dt);updateCharDetail(dt);updateSwordDetail(dt);updateShop(dt);updateGod(dt);updateHands(dt);updateFrenzy(dt);updateCut(dt);updateSkills(dt);updateSkBar();updateSwordFx(dt);updateCharX(dt);shakeCam(dt);updateGfx(dt);updateChar4(dt);updateMap();updatePull(dt);updateMonCull();updateAutoDive(dt);updateUW(dt);renderer.render(scene,camera)}
 resize();applySkin();applyRod();goMap();setPhase('idle');hud();checkHidden();slotUI();
 if(!isTouch)setTimeout(()=>{$('help').style.display='none'},15000);
 setInterval(save,15000);

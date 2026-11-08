@@ -56,7 +56,7 @@ PC와 모바일 브라우저에서 모두 플레이하는 3D 낚시 게임이다
 | 이동 | `movement()`, `onLand()`, `onDock()`, `groundY()`, `colliders` |
 | 낚시 | 상태 `F.phase`: idle → charge → fly → wait → bite → reel → result. 함수: `press()`, `release()`, `land()`, `pickFish()`, `startReel()`, `caught()`, `escapeFish()`, `cancelFishing()`, `fishing()` |
 | 검 스킬·캐릭터 | 검 스킬 6종 `SKILLS`·`castSkill()`(숫자키 3~8, 저장 `S.skills`, 검 탭에서 구매·강화), 검 원소 연출 `swordElement()`·`updateSwordFx()`, 캐릭터 반응 `CH`(기쁨 점프·시무룩·만세·기지개·이름표·먼지) |
-| 지도·물속 | 미니맵·큰 지도·세계 지도 `drawArea()`·`openMap()`(N키), 도착 연출, 잠수 `UW`(C 잠수·스페이스 위로, 산소 30초), 산호초 `buildReef()`, 물속 동굴 보물 `buildSeaCave()`(하루 1번, `S.cave`), 바다 깊이 -9, 몬스터 35종 |
+| 지도·물속 | 미니맵·큰 지도·세계 지도 `drawArea()`·`openMap()`(N키), 도착 연출, 잠수 `UW`(헤엄치면 자동 잠수 `updateAutoDive()`, C 더 깊이·스페이스 위로, 산소 30초), 바닥 모래 `sandTex`·돌·조개, 산호초 `buildReef()`, 물속 동굴 보물 `buildSeaCave()`(하루 1번, `S.cave`), 바다 깊이 -9, 몬스터 35종 |
 | 모바일 | 세로·가로 배치(`_gst` CSS), 빨간 공격 버튼 숨김(파란 버튼이 공격), 전체 화면 버튼, 자동 그래픽 `S.gfx`·`applyGfx()`(느리면 그림자 끔·해상도 낮춤, 기록 탭에서 선택) |
 | 갓겜 패치 | 바다 셰이더 `seaMat`·`seaSetup()`, 수영 `isSwim()`·`swimY()`, 휘는 낚싯대 `ROD.seg`, 손 슬롯 `S.hand`(1 낚싯대·2 검), 컷씬 `startCut()`(전설·신화), 레벨 `S.lv`·`S.xp`, 일일 미션 `S.daily`, 황금 물고기·콤보·물고기 떼 이벤트, 생선 가게 `buildShop()`(+10%), 히든 낚싯대는 해금 전 숨김 |
 | 아침·전투 | 아침 연출 `applyMorning()`·`updateMorning()`(그림자·윤슬·나비 등), 전투 `buildMonsterMap()`·`buildArena()`·`updateCombat()`·`attack()`. 저장 필드 `S.sword`, `S.swords`, `S.st.kills` |
